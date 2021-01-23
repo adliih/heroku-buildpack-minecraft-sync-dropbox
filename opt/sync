@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 
 if [ -d world ]; then
-    ./bin/dropbox_uploader.sh upload world /
+    zip -r world world
+    ./bin/dropbox_uploader.sh upload world.zip /
 else
     # No world exist, will try to download
-    backup_file=$( ./bin/dropbox_uploader.sh list | grep 'world' )
+    backup_file=$( ./bin/dropbox_uploader.sh list | grep 'world.zip' )
     if [[ -n $backup_file ]]; then
         # there are some backup will download
-        ./bin/dropbox_uploader.sh download world world
+        ./bin/dropbox_uploader.sh download world.zip world.zip
+        unzip world.zip
+        rm world.zip
     else
         echo 'No Backup Yet.'
     fi
