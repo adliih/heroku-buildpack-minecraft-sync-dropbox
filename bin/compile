@@ -1,0 +1,47 @@
+#!/bin/sh
+
+set -eu
+
+indent() {
+  sed -u 's/^/       /'
+}
+
+export_env_dir() {
+  env_dir=$1
+  whitelist_regex=${2:-''}
+  blacklist_regex=${3:-'^(PATH|GIT_DIR|CPATH|CPPATH|LD_PRELOAD|LIBRARY_PATH|JAVA_OPTS)$'}
+  if [ -d "$env_dir" ]; then
+    for e in $(ls $env_dir); do
+      echo "$e" | grep -E "$whitelist_regex" | grep -qvE "$blacklist_regex" &&
+      export "$e=$(cat $env_dir/$e)"
+      :
+    done
+  fi
+}
+
+BP_DIR="$(cd "$(dirname "$0")" && pwd)"
+BUILD_DIR=$1
+CACHE_DIR=$2
+OPT_DIR=$BP_DIR/../opt/
+
+export_env_dir $3
+
+mkdir -p $BUILD_DIR/bin
+
+echo "-----> Installing Dropbox Uploader from https://github.com/andreafabrizi/Dropbox-Uploader"
+curl -o dropbox_uploader.sh -s -L "https://raw.githubusercontent.com/andreafabrizi/Dropbox-Uploader/master/dropbox_uploader.sh"
+mv dropbox_uploader.sh $BUILD_DIR/bin/dropbox_uploader.sh
+echo "       Configuring DU config file..."
+cat > $BUILD_DIR/.dropbox_uploader << EndOfMessage
+CONFIGFILE_VERSION=2.0
+OAUTH_APP_KEY=$DROPBOX_APP_KEY
+OAUTH_APP_SECRET=$DROPBOX_APP_SECRET
+OAUTH_REFRESH_TOKEN=$DROPBOX_ACCESS_CODE
+EndOfMessage
+
+echo "       done"
+
+[ ! -f $BUILD_DIR/sync ]   && cp $OPT_DIR/sync $BUILD_DIR/bin
+
+chmod +x $BUILD_DIR/bin/sync
+chmod +x $BUILD_DIR/bin/dropbox_uploader.sh

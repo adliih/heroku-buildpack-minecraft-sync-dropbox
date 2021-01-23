@@ -1,0 +1,6 @@
+.cache
+bin/dropbox_uploader.sh
+bin/sync
+.dropbox_uploader
+.env
+world
